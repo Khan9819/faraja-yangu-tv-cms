@@ -1,0 +1,22 @@
+{
+  "name": "FarajaYanguTV CMS",
+  "short_name": "FarajaTV",
+  "description": "Content Management System for FarajaYanguTV",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#FF7A00",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/src/assets/logo.png",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["productivity", "utilities"],
+  "lang": "en-US",
+  "dir": "ltr"
+}

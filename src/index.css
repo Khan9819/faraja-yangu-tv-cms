@@ -1,0 +1,50 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+:root {
+    --primary-color: #eb8525;
+    --secondary-color: #1e293b;
+    --tertiary-color: #f9fafb;
+    --quaternary-color: #fff;
+    --quinary-color: #000;
+    --background-color: #161616;
+    --background-dimmer: #252525;
+    --background-light: #5a5a5a;
+    --text-color: #fff;
+    --text-dimmer: #818181;
+    --nav-background-color: #eb852560;
+    --nav-text-color: #fff;
+    --nav-text-hover-color: #eb852560;
+    --border-color: #292929;
+}
+
+.dark {
+    --primary-color: #eb8525;
+    --secondary-color: #1e293b;
+    --tertiary-color: #f9fafb;
+    --quaternary-color: #fff;
+    --quinary-color: #000;
+    --background-color: #161616;
+    --background-dimmer: #222222;
+    --background-light: #414141;
+    --text-color: #fff;
+    --text-dimmer: #818181;
+    --nav-background-color: #eb852520;
+    --nav-text-color: #fff;
+    --border-color: #292929;
+}
+
+.light {
+    --primary-color: #eb8525;
+    --secondary-color: #1e293b;
+    --tertiary-color: #f0f0f0;
+    --quaternary-color: #fff;
+    --quinary-color: #000;
+    --background-color: #ffffff;
+    --background-dimmer: #f3f3f3;
+    --background-light: #e7e7e7;
+    --text-color: #000;
+    --text-dimmer: #535353;
+    --nav-background-color: #eb852515;
+    --nav-text-color: #000;
+    --border-color: #e0e0e0;
+}
