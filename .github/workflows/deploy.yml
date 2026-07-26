@@ -1,0 +1,24 @@
+name: Deploy CMS to CapRover
+on:
+  push:
+    branches: [main]
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      - name: Install & Build
+        run: |
+          npm ci
+          npm run build
+      - name: Deploy to CapRover
+        uses: caprover/deploy-from-github-action@v1.1.0
+        with:
+          server: ${{ secrets.CAPROVER_URL }}
+          app: ${{ secrets.CAPROVER_APP_CMS }}
+          password: ${{ secrets.CAPROVER_PASSWORD }}
