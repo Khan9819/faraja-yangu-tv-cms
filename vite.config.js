@@ -66,6 +66,21 @@ export default defineConfig({
                 changeOrigin: true,
                 secure: true,
             },
+            '/api': {
+                target: 'https://backend.farajayangutv.co.tz',
+                changeOrigin: true,
+                secure: true,
+            },
+            '/website-posts': {
+                target: 'https://backend.farajayangutv.co.tz',
+                changeOrigin: true,
+                secure: true,
+            },
+            '/categories-with-cover': {
+                target: 'https://backend.farajayangutv.co.tz',
+                changeOrigin: true,
+                secure: true,
+            },
         },
     },
 });
