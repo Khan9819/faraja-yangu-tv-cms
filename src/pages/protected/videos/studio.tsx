@@ -55,6 +55,7 @@ interface VideoFormData {
     tv_poster: File | null;
     tv_landscape: File | null;
     tv_square: File | null;
+    portrait_cover: File | null;
     videoFile: File | null;
     duration: string;
     status: string;
@@ -1480,10 +1481,10 @@ export default function VideoStudio() {
                             {/* TV Poster */}
                             <Box>
                                 <Typography variant="subtitle2" gutterBottom fontWeight={600}>
-                                    TV Poster <Typography variant="caption" color="text.secondary">(540x720 recommended)</Typography>
+                                    TV Poster <Typography variant="caption" color="text.secondary">(1080x1350 recommended)</Typography>
                                 </Typography>
                                 {!tvPosterPreview ? (
-                                    <Paper elevation={0} sx={{ width: '100%', aspectRatio: '3/4', border: '2px dashed', borderColor: 'divider', borderRadius: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', '&:hover': { borderColor: '#FF7A00', backgroundColor: 'rgba(255, 122, 0, 0.05)' } }}>
+                                    <Paper elevation={0} sx={{ width: '100%', aspectRatio: '4/5', border: '2px dashed', borderColor: 'divider', borderRadius: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', '&:hover': { borderColor: '#FF7A00', backgroundColor: 'rgba(255, 122, 0, 0.05)' } }}>
                                         <FaImage size={32} color="#999" />
                                         <Typography variant="body2" color="text.secondary" sx={{ mt: 1, mb: 2 }}>
                                             Upload TV poster
@@ -1494,7 +1495,7 @@ export default function VideoStudio() {
                                         </Button>
                                     </Paper>
                                 ) : (
-                                    <Box sx={{ position: 'relative', width: '100%', aspectRatio: '3/4', borderRadius: 2, overflow: 'hidden', backgroundColor: '#000' }}>
+                                    <Box sx={{ position: 'relative', width: '100%', aspectRatio: '4/5', borderRadius: 2, overflow: 'hidden', backgroundColor: '#000' }}>
                                         <img src={tvPosterPreview} alt="TV Poster" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
                                         <IconButton onClick={() => handleRemoveFile('tv_poster')} sx={{ position: 'absolute', top: 8, right: 8, backgroundColor: 'rgba(0, 0, 0, 0.6)', color: '#fff', '&:hover': { backgroundColor: 'rgba(211, 47, 47, 0.8)' } }}>
                                             <FaTrash size={14} />
