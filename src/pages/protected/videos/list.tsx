@@ -40,10 +40,15 @@ export default function VideosList() {
         );
     }, [videos, searchQuery]);
 
-    // Get IDs of videos that are pending or processing (for WebSocket connections)
+    // Get IDs of videos that are pending / processing / assembling
+    // ('assembling' matters: chunked & URL uploads set this status right after
+    //  assembly is queued — without it, progress never connects until refresh)
     const processingVideoIds = useMemo(() => {
         return videos
-            .filter((v: any) => v.processing_status === 'pending' || v.processing_status === 'processing')
+            .filter((v: any) =>
+                v.processing_status === 'pending' ||
+                v.processing_status === 'processing' ||
+                v.processing_status === 'assembling')
             .map((v: any) => v.id);
     }, [videos]);
 
@@ -108,7 +113,7 @@ export default function VideosList() {
             renderCell: (params) => {
                 const videoId = params.row.id;
                 const progress = progressMap[videoId];
-                const isProcessing = params.row.processing_status === 'pending' || params.row.processing_status === 'processing';
+                const isProcessing = params.row.processing_status === 'pending' || params.row.processing_status === 'processing' || params.row.processing_status === 'assembling';
                 const hasActiveConnection = activeConnections.includes(videoId);
 
                 return (

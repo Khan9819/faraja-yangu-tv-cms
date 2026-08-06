@@ -161,15 +161,30 @@ export default function InterceptorList() {
             headerAlign: "center",
             renderCell: (params) => {
                 const video = params.row.video;
-                if (!video) {
-                    return <Typography variant="body2" color="text.secondary">All Videos</Typography>;
+                const categories: any[] = params.row.categories || [];
+                if (video) {
+                    return (
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1, width: "100%", height: "100%" }}>
+                            {video.thumbnail_url && <img src={video.thumbnail_url} alt="" style={{ width: 36, height: 22, objectFit: "cover", borderRadius: 4 }} />}
+                            <Typography variant="body2" noWrap>{video.title}</Typography>
+                        </Box>
+                    );
                 }
-                return (
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1, width: "100%", height: "100%" }}>
-                        {video.thumbnail_url && <img src={video.thumbnail_url} alt="" style={{ width: 36, height: 22, objectFit: "cover", borderRadius: 4 }} />}
-                        <Typography variant="body2" noWrap>{video.title}</Typography>
-                    </Box>
-                );
+                if (categories.length > 0) {
+                    return (
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, width: "100%", height: "100%", flexWrap: "wrap" }}>
+                            {categories.map((cat) => (
+                                <Chip
+                                    key={cat.id}
+                                    label={cat.name}
+                                    size="small"
+                                    sx={{ height: 20, fontSize: "0.7rem", backgroundColor: "rgba(255, 122, 0, 0.1)", color: "#FF7A00" }}
+                                />
+                            ))}
+                        </Box>
+                    );
+                }
+                return <Typography variant="body2" color="text.secondary">All Videos</Typography>;
             },
         },
         {

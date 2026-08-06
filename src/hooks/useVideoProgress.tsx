@@ -53,6 +53,7 @@ export default function useVideoProgress(
     const retryCountRef = useRef<Record<number, number>>({});
     const pollTimers = useRef<Record<number, NodeJS.Timeout>>({});
     const retryTimers = useRef<Record<number, NodeJS.Timeout>>({});
+    const completedRef = useRef<Set<number>>(new Set());
 
     const socketHost = apiServices.socketHost;
 
@@ -68,6 +69,11 @@ export default function useVideoProgress(
 
     const connectToVideo = useCallback((videoId: number) => {
         if (wsRefs.current[videoId]) {
+            return;
+        }
+
+        // Never re-connect or reset a video that already completed
+        if (completedRef.current.has(videoId)) {
             return;
         }
 
@@ -96,9 +102,10 @@ export default function useVideoProgress(
         wsRefs.current[videoId] = ws;
 
         setActiveConnections(prev => [...prev, videoId]);
+        // Preserve existing progress — don't reset to 0 (prevents the indicator
+        // jumping back on reconnect, which read as "flicker").
         updateProgress(videoId, {
             stage: '',
-            progress: 0,
             message: 'Connecting...',
             status: 'pending',
         });
@@ -135,6 +142,7 @@ export default function useVideoProgress(
                             progress: 100,
                             message: data.message || 'Completed',
                         });
+                        completedRef.current.add(videoId);
                         ws.close();
                         if (onComplete) {
                             onComplete(videoId);
@@ -166,41 +174,74 @@ export default function useVideoProgress(
             delete wsRefs.current[videoId];
             setActiveConnections(prev => prev.filter(id => id !== videoId));
 
+            // Never overwrite a completed video with an error state
+            if (completedRef.current.has(videoId)) {
+                return;
+            }
+
             if (event.code === 4001) {
                 updateProgress(videoId, {
                     status: 'error',
                     message: 'Authentication failed',
                 });
+                return;
             }
 
-            // Check if we should show max retries message
+            if (event.code === 1000 || event.code === 1001) {
+                // Normal server close — don't burn retries. Do a one-shot
+                // direct status check; if the video already completed we mark
+                // it done without waiting for the retry/poll fallback.
+                setTimeout(async () => {
+                    try {
+                        const resp: any = await apiServices.getVideoById(videoId);
+                        const v: any = resp?.data ?? resp;
+                        if (!v || !v.id) return;
+                        if (v.processing_status === 'completed') {
+                            updateProgress(videoId, { status: 'completed', progress: 100, message: 'Completed' });
+                            completedRef.current.add(videoId);
+                            if (onComplete) onComplete(videoId);
+                        }
+                    } catch (_) {}
+                }, 2000);
+                return;
+            }
+
+            // Check if we should show max retries message (fresh state read)
             const retries = retryCountRef.current[videoId] || 0;
-            if (retries >= MAX_RETRIES && progressMap[videoId]?.status !== 'completed') {
-                updateProgress(videoId, {
-                    status: 'error',
-                    message: 'Max connection attempts reached',
+            if (retries >= MAX_RETRIES) {
+                setProgressMap(prev => {
+                    if (prev[videoId]?.status === 'completed') return prev;
+                    return {
+                        ...prev,
+                        [videoId]: {
+                            ...prev[videoId],
+                            status: 'error',
+                            message: 'Max connection attempts reached',
+                        },
+                    };
                 });
             }
         };
     }, [auth?.access_token, socketHost, activeConnections.length, updateProgress, onComplete, progressMap]);
 
-    // ── HTTP polling fallback (uses feed endpoint to check status by ID) ──
+    // ── HTTP polling fallback (queries the video directly, NOT the feed page,
+    //    so completion shows up for ANY video even if it's not in the first
+    //    feed page — fixes "status stuck until browser refresh") ──
     const startPolling = useCallback((videoId: number) => {
         if (pollTimers.current[videoId]) return;
         const poll = async () => {
             try {
-                const resp = await fetch(`${apiServices.host}/streaming/feed/?page=1&page_size=50`);
-                const json = await resp.json();
-                const results: any[] = json?.data?.results ?? [];
-                const video = results.find((v: any) => v.id === videoId);
-                if (!video) return;
+                const resp: any = await apiServices.getVideoById(videoId);
+                const video: any = resp?.data ?? resp;
+                if (!video || !video.id) return;
                 const status = video.processing_status;
                 if (status === 'completed') {
                     updateProgress(videoId, { status: 'completed', progress: 100, message: 'Completed' });
+                    completedRef.current.add(videoId);
                     if (onComplete) onComplete(videoId);
                     clearInterval(pollTimers.current[videoId]);
                     delete pollTimers.current[videoId];
-                } else if (status === 'failed') {
+                } else if (status === 'failed' || status === 'killed') {
                     updateProgress(videoId, { status: 'failed', message: video.processing_error || 'Processing failed' });
                     clearInterval(pollTimers.current[videoId]);
                     delete pollTimers.current[videoId];
@@ -210,14 +251,14 @@ export default function useVideoProgress(
             } catch (_) {}
         };
         poll(); // immediate first check
-        pollTimers.current[videoId] = setInterval(poll, 15000);
+        pollTimers.current[videoId] = setInterval(poll, 10000);
     }, [updateProgress, onComplete]);
 
     const startPollingForExhaustedVideos = useCallback(() => {
         videoIds.forEach(id => {
             const retries = retryCountRef.current[id] || 0;
             const hasWs = !!wsRefs.current[id];
-            if (!hasWs && retries >= MAX_RETRIES) {
+            if (!hasWs && retries >= MAX_RETRIES && !completedRef.current.has(id)) {
                 startPolling(id);
             }
         });
@@ -242,6 +283,8 @@ export default function useVideoProgress(
 
     const resetRetries = useCallback(() => {
         retryCountRef.current = {};
+        // NOTE: completedRef is intentionally NOT cleared — completed videos
+        // must never re-connect (prevents onComplete refetch loops).
         Object.values(pollTimers.current).forEach(t => clearInterval(t));
         pollTimers.current = {};
         Object.values(retryTimers.current).forEach(t => clearTimeout(t));
@@ -252,7 +295,7 @@ export default function useVideoProgress(
     useEffect(() => {
         const processingVideos = videoIds.filter(id => {
             const retries = retryCountRef.current[id] || 0;
-            return !wsRefs.current[id] && retries < MAX_RETRIES;
+            return !wsRefs.current[id] && retries < MAX_RETRIES && !completedRef.current.has(id);
         });
         const availableSlots = MAX_CONNECTIONS - activeConnections.length;
         const videosToConnect = processingVideos.slice(0, availableSlots);
