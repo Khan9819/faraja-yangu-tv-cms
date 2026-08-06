@@ -324,10 +324,13 @@ export default function InterceptorEdit() {
             if (formData.targetVideo) {
                 adFormData.append("video", formData.targetVideo);
             }
-            if (selectedCategories.length > 0) {
-                selectedCategories.forEach((catId) => {
-                    adFormData.append("categories", catId.toString());
-                });
+            // Always send categories so an empty selection is stored as "All Videos" (global)
+            // and clears any previously targeted categories on update.
+            selectedCategories.forEach((catId) => {
+                adFormData.append("categories", catId.toString());
+            });
+            if (selectedCategories.length === 0) {
+                adFormData.append("categories", "");
             }
             if (formData.redirect_link) {
                 adFormData.append("redirect_link", formData.redirect_link);
@@ -348,6 +351,8 @@ export default function InterceptorEdit() {
                     videoMetaFormData.append("title", mediaFile.name.replace(/\.[^/.]+$/, ""));
                     videoMetaFormData.append("description", "Interceptor ad video");
                     videoMetaFormData.append("status", "published");
+                    // Ad media must NOT appear in the content list — only in the video player
+                    videoMetaFormData.append("is_ad_media", "true");
                     const videoResponse = await api.createVideo(videoMetaFormData);
                     const videoId = videoResponse?.data?.id || videoResponse?.id;
                     if (!videoId) throw new Error("Failed to create video record");
