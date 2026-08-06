@@ -47,6 +47,25 @@ import Hls from 'hls.js';
 
 type UploadSource = 'local' | 'google_drive';
 
+function generateUUID(): string {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+        const r = Math.random() * 16 | 0;
+        const v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
+}
+
+/**
+ * Rename an uploaded image with a random UUID so two different videos can
+ * never save under the same object-storage key (e.g. two 'cover.jpg' uploads
+ * used to overwrite each other, making videos share covers).
+ */
+function renameFileWithUUID(file: File): File {
+    const extension = file.name.split('.').pop() || 'jpg';
+    const newFileName = `${generateUUID()}.${extension}`;
+    return new File([file], newFileName, { type: file.type });
+}
+
 interface VideoFormData {
     title: string;
     description: string;
@@ -76,6 +95,7 @@ export default function VideoStudio() {
         tv_poster: null,
         tv_landscape: null,
         tv_square: null,
+        portrait_cover: null,
         videoFile: null,
         duration: '',
         status: 'published',
@@ -145,6 +165,7 @@ export default function VideoStudio() {
                 tv_poster: null,
                 tv_landscape: null,
                 tv_square: null,
+                portrait_cover: null,
                 videoFile: null,
                 duration: video.duration || '',
                 status: video.status || 'published',
@@ -377,16 +398,16 @@ export default function VideoStudio() {
             submitData.append('status', formData.status);
 
             if (formData.thumbnail) {
-                submitData.append('thumbnail', formData.thumbnail);
+                submitData.append('thumbnail', renameFileWithUUID(formData.thumbnail));
             }
             if (formData.tv_poster) {
-                submitData.append('tv_poster', formData.tv_poster);
+                submitData.append('tv_poster', renameFileWithUUID(formData.tv_poster));
             }
             if (formData.tv_landscape) {
-                submitData.append('tv_landscape', formData.tv_landscape);
+                submitData.append('tv_landscape', renameFileWithUUID(formData.tv_landscape));
             }
             if (formData.tv_square) {
-                submitData.append('tv_square', formData.tv_square);
+                submitData.append('tv_square', renameFileWithUUID(formData.tv_square));
             }
 
             let videoId = createdVideoId;
@@ -649,16 +670,16 @@ export default function VideoStudio() {
             submitData.append('status', formData.status);
 
             if (formData.thumbnail) {
-                submitData.append('thumbnail', formData.thumbnail);
+                submitData.append('thumbnail', renameFileWithUUID(formData.thumbnail));
             }
             if (formData.tv_poster) {
-                submitData.append('tv_poster', formData.tv_poster);
+                submitData.append('tv_poster', renameFileWithUUID(formData.tv_poster));
             }
             if (formData.tv_landscape) {
-                submitData.append('tv_landscape', formData.tv_landscape);
+                submitData.append('tv_landscape', renameFileWithUUID(formData.tv_landscape));
             }
             if (formData.tv_square) {
-                submitData.append('tv_square', formData.tv_square);
+                submitData.append('tv_square', renameFileWithUUID(formData.tv_square));
             }
 
             // For edit mode or if no video file, proceed normally
