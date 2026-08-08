@@ -555,8 +555,12 @@ export default function VideoStudio() {
                 uploadedChunksRef.current.add(chunkIndex);
             } catch (error: any) {
                 const status = error?.response?.status;
-                // Retry on 504 Gateway Timeout, 502 Bad Gateway, 403 (expired URL), or network errors
-                if ((status === 504 || status === 502 || status === 403 || !status) && retryCount < maxRetries) {
+                // Retry on transient failures: 502/504 (proxy/gateway), 403
+                // (expired presigned URL), 408 (request timeout), 429 (rate
+                // limited), 500 (R2 server error) or network/timeout errors
+                // (no response -> !status, includes our new fetch timeout).
+                const retryable = [502, 504, 403, 408, 429, 500].includes(status) || !status;
+                if (retryable && retryCount < maxRetries) {
                     console.log(`Chunk ${chunkIndex + 1}/${totalChunks} failed, retrying (${retryCount + 1}/${maxRetries})...`);
                     // Exponential backoff: wait 1s, 2s, 4s
                     await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, retryCount)));
