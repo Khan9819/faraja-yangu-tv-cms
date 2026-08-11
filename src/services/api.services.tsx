@@ -528,6 +528,45 @@ export default class API extends BaseService {
         return response.data;
     }
 
+    // ==================== Website Engagement (real-time) ==================== //
+
+    async getWebsiteSummary() {
+        let response = await this.axiosInstance.get(`/api/analytics/website/summary/`,
+            {
+                headers: this.headers,
+            })
+
+        return response.data;
+    }
+
+    async getWebsiteRealtime() {
+        let response = await this.axiosInstance.get(`/api/analytics/website/realtime/`,
+            {
+                headers: this.headers,
+            })
+
+        return response.data;
+    }
+
+    async getWebsiteTopVideos(params?: { limit?: number }) {
+        let response = await this.axiosInstance.get(`/api/analytics/website/top-videos/`,
+            {
+                headers: this.headers,
+                params,
+            })
+
+        return response.data;
+    }
+
+    async getWebsiteTimeline() {
+        let response = await this.axiosInstance.get(`/api/analytics/website/timeline/`,
+            {
+                headers: this.headers,
+            })
+
+        return response.data;
+    }
+
     // ==================== Settings endpoints ==================== //
 
     async getSettings() {

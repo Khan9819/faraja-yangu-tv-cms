@@ -29,6 +29,7 @@ const CommentsInbox = lazy(() => import('../pages/protected/comments/inbox'))
 const WebsitePostList = lazy(() => import('../pages/protected/website-posting/list'))
 const WebsitePostCreate = lazy(() => import('../pages/protected/website-posting/create'))
 const WebsitePostEdit = lazy(() => import('../pages/protected/website-posting/edit'))
+const WebsiteEngagement = lazy(() => import('../pages/protected/website'))
 // ////////////////////////////////////////////////////////////////////////// //
 
 const auth_routes = [
@@ -262,6 +263,16 @@ const protected_routes: AppRoute[] = [
     subtitle: "App users",
     element: UsersList,
     icon: FaUsers,
+    render: true,
+  },
+  {
+    type: "ChildRoute",
+    title: "Website",
+    path: "/website",
+    slug: "website",
+    subtitle: "Website engagement real-time",
+    element: WebsiteEngagement,
+    icon: FaGlobe,
     render: true,
   },
   {
