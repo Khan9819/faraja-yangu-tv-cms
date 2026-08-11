@@ -224,19 +224,33 @@ export default class API extends BaseService {
 
     
     async directUploadVideoChunk(uploadUrl: string, chunk: Blob, requiredHeaders: Record<string, string> = { 'Content-Type': 'application/octet-stream' }) {
-        const response = await fetch(uploadUrl, {
-            method: 'PUT',
-            body: chunk,
-            headers: requiredHeaders,
-        });
+        // Timeout is CRITICAL: a raw fetch() without one hangs forever when the
+        // R2 PUT stalls, so the upload looks "cut" and the retry logic in
+        // studio.tsx never runs (a hang never throws). 3 minutes per 5MB chunk
+        // is generous for slow uplinks. We use a manual AbortController +
+        // setTimeout (not AbortSignal.timeout) so it works on older browsers
+        // (Safari < 16, Chrome < 103). On abort fetch throws a DOMException
+        // with no response, which the retry loop treats as retryable.
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 180000);
+        try {
+            const response = await fetch(uploadUrl, {
+                method: 'PUT',
+                body: chunk,
+                headers: requiredHeaders,
+                signal: controller.signal,
+            });
 
-        if (!response.ok) {
-            const error: any = new Error(`Upload failed with status ${response.status}`);
-            error.response = { status: response.status };
-            throw error;
+            if (!response.ok) {
+                const error: any = new Error(`Upload failed with status ${response.status}`);
+                error.response = { status: response.status };
+                throw error;
+            }
+
+            return response;
+        } finally {
+            clearTimeout(timer);
         }
-
-        return response;
     }
 
     async getUploadStatus(videoId: number, totalChunks: number) {
@@ -507,6 +521,45 @@ export default class API extends BaseService {
 
     async getCategoryPerformance() {
         let response = await this.axiosInstance.get(`/management/reports/category-performance/`,
+            {
+                headers: this.headers,
+            })
+
+        return response.data;
+    }
+
+    // ==================== Website Engagement (real-time) ==================== //
+
+    async getWebsiteSummary() {
+        let response = await this.axiosInstance.get(`/api/analytics/website/summary/`,
+            {
+                headers: this.headers,
+            })
+
+        return response.data;
+    }
+
+    async getWebsiteRealtime() {
+        let response = await this.axiosInstance.get(`/api/analytics/website/realtime/`,
+            {
+                headers: this.headers,
+            })
+
+        return response.data;
+    }
+
+    async getWebsiteTopVideos(params?: { limit?: number }) {
+        let response = await this.axiosInstance.get(`/api/analytics/website/top-videos/`,
+            {
+                headers: this.headers,
+                params,
+            })
+
+        return response.data;
+    }
+
+    async getWebsiteTimeline() {
+        let response = await this.axiosInstance.get(`/api/analytics/website/timeline/`,
             {
                 headers: this.headers,
             })

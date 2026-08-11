@@ -5,7 +5,7 @@ import { PageHeader } from "../../components/page-header";
 import Summary from "../../components/summary";
 import DataGridWrapper from "../../components/DataTable/DataGridWrapper";
 import type { GridColDef } from "@mui/x-data-grid";
-import { FaUser, FaEye, FaHeart, FaClock, FaComment, FaAd, FaBell, FaMobile, FaChartLine, FaUserCheck, FaFilm, FaTrash } from "react-icons/fa";
+import { FaUser, FaEye, FaHeart, FaClock, FaComment, FaAd, FaBell, FaMobile, FaChartLine, FaUserCheck, FaFilm, FaTrash, FaGlobe, FaUsers, FaPlay } from "react-icons/fa";
 import MetricsChart from "../../components/Analytics/MetricsChart";
 import useApiServices from "../../hooks/useAPI";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -68,9 +68,24 @@ export default function Dashboard() {
         queryFn: () => api.getRecentComments({ limit: 5 }),
     });
 
+    // Website engagement (live) — cards za farajayangutv.co.tz
+    const { data: websiteSummaryResponse, isLoading: isWebsiteSummaryLoading } = useQuery({
+        queryKey: ["website-summary"],
+        queryFn: () => api.getWebsiteSummary(),
+        refetchInterval: 15_000,
+    });
+    const { data: websiteRealtimeResponse } = useQuery({
+        queryKey: ["website-realtime"],
+        queryFn: () => api.getWebsiteRealtime(),
+        refetchInterval: 5_000,
+    });
+
     const activeUsersToday = activeUsersTodayResponse?.data ?? [];
     const summary: any = dashboardSummaryResponse?.data ?? {};
     const recentComments = recentCommentsResponse?.data ?? [];
+    const websiteSummary: any = websiteSummaryResponse?.data ?? {};
+    const websiteRealtime: any = websiteRealtimeResponse?.data ?? {};
+    const websiteActiveNow = websiteRealtime.active_now ?? websiteSummary.active_now ?? 0;
 
     const gridColumns: GridColDef[] = [
         { field: 'name', headerName: 'Name', flex: 1.2, minWidth: 180, filterable: true },
@@ -234,6 +249,52 @@ export default function Dashboard() {
                         { value: `${summary.devices?.iOS ?? 0}`, color: "info", tooltip: "iOS devices" },
                         { value: `${summary.devices?.uptodate_ratio?.toFixed(0) ?? 0}%`, color: "default", tooltip: "Up-to-date devices" },
                     ]}
+                />
+            </div>
+
+            {/* Website Engagement Cards (farajayangutv.co.tz) */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1, mt: 1 }}>
+                <FaGlobe size={13} style={{ color: 'var(--primary-color)' }} />
+                <Typography variant="body2" sx={{ fontWeight: 600 }}>Website Engagement (Live)</Typography>
+                <Typography variant="caption" sx={{ color: '#10b981', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', backgroundColor: '#10b981' }} />
+                    {websiteActiveNow} mtandaoni sasa
+                </Typography>
+            </Box>
+            <div className="d-flex flex-wrap justify-content-start gap-2 mb-3">
+                <Summary
+                    label="Active Now (Website)"
+                    value={isWebsiteSummaryLoading ? "..." : String(websiteActiveNow)}
+                    icon={<FaUsers size={16} />}
+                    tooltip="Watu wanaofuatilia website sasa (dakika 5 zilizopita)"
+                    chips={[
+                        { value: `Sessions today: ${websiteSummary.today_sessions ?? 0}`, color: "success", tooltip: "Sessions leo" },
+                        { value: `Unique: ${websiteSummary.unique_sessions ?? 0}`, color: "info", tooltip: "Unique sessions zote" },
+                    ]}
+                />
+                <Summary
+                    label="Website Pageviews"
+                    value={isWebsiteSummaryLoading ? "..." : (websiteSummary.total_pageviews ?? 0).toString()}
+                    icon={<FaEye size={16} />}
+                    tooltip="Jumla ya pageviews za website"
+                    chips={[
+                        { value: `Today: ${websiteSummary.today_pageviews ?? 0}`, color: "success", tooltip: "Pageviews leo" },
+                    ]}
+                />
+                <Summary
+                    label="Website Video Plays"
+                    value={isWebsiteSummaryLoading ? "..." : (websiteSummary.total_video_plays ?? 0).toString()}
+                    icon={<FaPlay size={16} />}
+                    tooltip="Video zilizochezwa kwenye website"
+                    chips={[
+                        { value: `Today: ${websiteSummary.today_video_plays ?? 0}`, color: "warning", tooltip: "Video plays leo" },
+                    ]}
+                />
+                <Summary
+                    label="Website Watch Time"
+                    value={isWebsiteSummaryLoading ? "..." : `${((websiteSummary.watch_seconds_total ?? 0) / 3600).toFixed(1)}h`}
+                    icon={<FaClock size={16} />}
+                    tooltip="Muda wa kutazama kwenye website"
                 />
             </div>
 
