@@ -5,7 +5,7 @@ import { PageHeader } from "../../components/page-header";
 import Summary from "../../components/summary";
 import DataGridWrapper from "../../components/DataTable/DataGridWrapper";
 import type { GridColDef } from "@mui/x-data-grid";
-import { FaUser, FaEye, FaHeart, FaClock, FaComment, FaAd, FaBell, FaMobile, FaChartLine, FaUserCheck, FaFilm, FaTrash, FaGlobe, FaUsers, FaPlay } from "react-icons/fa";
+import { FaUser, FaEye, FaHeart, FaClock, FaComment, FaAd, FaBell, FaMobile, FaChartLine, FaUserCheck, FaFilm, FaTrash, FaGlobe, FaUsers, FaPlay, FaDesktop } from "react-icons/fa";
 import MetricsChart from "../../components/Analytics/MetricsChart";
 import useApiServices from "../../hooks/useAPI";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -86,6 +86,15 @@ export default function Dashboard() {
     const websiteSummary: any = websiteSummaryResponse?.data ?? {};
     const websiteRealtime: any = websiteRealtimeResponse?.data ?? {};
     const websiteActiveNow = websiteRealtime.active_now ?? websiteSummary.active_now ?? 0;
+
+    // Onyesha muda vizuri: sekunde kama chini ya 1m, dakika kama chini ya 1h,
+    // vinginevyo masaa. (Kabla: muda mdogo ulionekana kama "0.0h" = data "haipo".)
+    const formatWatch = (sec: number | undefined) => {
+        const total = Number(sec ?? 0);
+        if (total < 60) return `${Math.round(total)}s`;
+        if (total < 3600) return `${(total / 60).toFixed(1)}m`;
+        return `${(total / 3600).toFixed(1)}h`;
+    };
 
     const gridColumns: GridColDef[] = [
         { field: 'name', headerName: 'Name', flex: 1.2, minWidth: 180, filterable: true },
@@ -292,9 +301,23 @@ export default function Dashboard() {
                 />
                 <Summary
                     label="Website Watch Time"
-                    value={isWebsiteSummaryLoading ? "..." : `${((websiteSummary.watch_seconds_total ?? 0) / 3600).toFixed(1)}h`}
+                    value={isWebsiteSummaryLoading ? "..." : formatWatch(websiteSummary.watch_seconds_total)}
                     icon={<FaClock size={16} />}
                     tooltip="Muda wa kutazama kwenye website"
+                    chips={[
+                        { value: `Avg/play: ${formatWatch(websiteSummary.avg_watch_seconds)}`, color: "warning", tooltip: "Muda wa wastani wa kutazama kwa kila video play" },
+                    ]}
+                />
+                <Summary
+                    label="Website Devices"
+                    value={isWebsiteSummaryLoading ? "..." : (websiteSummary.unique_sessions ?? 0).toString()}
+                    icon={<FaDesktop size={16} />}
+                    tooltip="Migawanyo ya devices zinazotumika kwenye website"
+                    chips={[
+                        { value: `Mobile: ${websiteSummary.devices?.mobile ?? 0}`, color: "info", tooltip: "Mobile devices" },
+                        { value: `Desktop: ${websiteSummary.devices?.desktop ?? 0}`, color: "success", tooltip: "Desktop devices" },
+                        { value: `Tablet: ${websiteSummary.devices?.tablet ?? 0}`, color: "default", tooltip: "Tablet devices" },
+                    ]}
                 />
             </div>
 

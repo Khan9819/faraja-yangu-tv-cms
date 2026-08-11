@@ -17,25 +17,37 @@ interface ISummaryProps {
 
 export default function Summary(props: ISummaryProps) {
     const content = (
-        <div className="d-flex flex-column gap-1 justify-content-center py-2 px-3 position-relative" style={{ backgroundColor: 'var(--background-dimmer)', border: '1px solid var(--border-color)', borderRadius: '5px', minWidth: '220px', height: '90.0px' }}>
-            <div className="d-flex align-items-center gap-2 position-relative">
-                <small className="my-0">{props.label}</small>
-                <div className="d-flex align-items-center gap-2 position-absolute end-0">
-                    {props.icon && props.icon}
+        // Flex layout (sio absolute positioning) — label, value na chips
+        // haziwezi kupandana tena hata kwenye skrini ndogo.
+        <div
+            className="d-flex flex-column justify-content-between gap-1 py-2 px-3"
+            style={{
+                backgroundColor: 'var(--background-dimmer)',
+                border: '1px solid var(--border-color)',
+                borderRadius: '5px',
+                minWidth: '220px',
+                minHeight: '90px',
+                maxWidth: '100%',
+            }}
+        >
+            <div className="d-flex align-items-center justify-content-between gap-2">
+                <small className="my-0 text-truncate" style={{ minWidth: 0 }}>{props.label}</small>
+                {props.icon && <div className="d-flex align-items-center flex-shrink-0">{props.icon}</div>}
+            </div>
+            <h5 className="my-0 text-truncate" style={{ minWidth: 0 }}>{props.value}</h5>
+            {props.chips && props.chips.length > 0 && (
+                <div className="d-flex flex-wrap gap-1" style={{ minHeight: 20 }}>
+                    {props.chips.map((chip, i) => (
+                        chip.tooltip ? (
+                            <Tooltip key={i} title={chip.tooltip} arrow placement="top">
+                                <Chip size="small" icon={chip.icon as any} label={chip.value} color={chip.color as any} variant="outlined" />
+                            </Tooltip>
+                        ) : (
+                            <Chip size="small" key={i} icon={chip.icon as any} label={chip.value} color={chip.color as any} variant="outlined" />
+                        )
+                    ))}
                 </div>
-            </div>
-            <h5 className="my-0">{props.value}</h5>
-            <div className="d-flex align-items-center gap-2 position-absolute" style={{ bottom: '10px', right: '10px' }}>
-                {props.chips && props.chips.map((chip, i) => (
-                    chip.tooltip ? (
-                        <Tooltip key={i} title={chip.tooltip} arrow placement="top">
-                            <Chip size="small" icon={chip.icon as any} label={chip.value} color={chip.color as any} variant="outlined" />
-                        </Tooltip>
-                    ) : (
-                        <Chip size="small" key={i} icon={chip.icon as any} label={chip.value} color={chip.color as any} variant="outlined" />
-                    )
-                ))}
-            </div>
+            )}
         </div>
     );
 

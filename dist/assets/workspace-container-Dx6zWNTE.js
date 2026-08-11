@@ -1,0 +1,1 @@
+import{j as o}from"./index-Duafc3Cq.js";const d=r=>o.jsx("div",{className:"p-3 rounded my-2",style:{border:"1px solid var(--background-dimmer)",backgroundColor:"var(--background-dimmer)"},children:r.children});export{d as W};

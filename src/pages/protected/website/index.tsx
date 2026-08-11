@@ -1,5 +1,5 @@
 import { Box, Typography, Skeleton } from '@mui/material';
-import { FaGlobe, FaEye, FaPlay, FaClock, FaUsers, FaSignal } from 'react-icons/fa';
+import { FaGlobe, FaEye, FaPlay, FaClock, FaUsers, FaSignal, FaDesktop } from 'react-icons/fa';
 import { WorkspaceContainer } from '../../../components/workspace-container';
 import { PageHeader } from '../../../components/page-header';
 import Summary from '../../../components/summary';
@@ -141,6 +141,20 @@ export default function WebsiteEngagement() {
                     label="Watch Time"
                     value={isSummaryLoading ? '...' : formatWatch(summary.watch_seconds_total)}
                     icon={<FaClock size={14} />}
+                    chips={[
+                        { value: `Avg/play: ${formatWatch(summary.avg_watch_seconds)}`, color: 'warning', tooltip: 'Muda wa wastani wa kutazama kwa kila video play' },
+                    ]}
+                />
+                <Summary
+                    label="Devices"
+                    value={isSummaryLoading ? '...' : formatNumber(summary.unique_sessions)}
+                    icon={<FaDesktop size={14} />}
+                    tooltip="Migawanyo ya devices zinazotumika kwenye website"
+                    chips={[
+                        { value: `Mobile: ${summary.devices?.mobile ?? 0}`, color: 'info', tooltip: 'Mobile devices' },
+                        { value: `Desktop: ${summary.devices?.desktop ?? 0}`, color: 'success', tooltip: 'Desktop devices' },
+                        { value: `Tablet: ${summary.devices?.tablet ?? 0}`, color: 'default', tooltip: 'Tablet devices' },
+                    ]}
                 />
                 <Summary
                     label="Unique Sessions"

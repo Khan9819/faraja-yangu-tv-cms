@@ -1,1 +1,0 @@
-import{j as o}from"./index-CLM-8Ljn.js";const d=r=>o.jsx("div",{className:"p-3 rounded my-2",style:{border:"1px solid var(--background-dimmer)",backgroundColor:"var(--background-dimmer)"},children:r.children});export{d as W};
