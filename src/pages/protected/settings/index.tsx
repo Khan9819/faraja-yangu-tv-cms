@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Box, Tabs, Tab, Typography, Avatar, Chip, IconButton, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
+import { Box, Tabs, Tab, Typography, Avatar, Chip, IconButton, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, FormControl, InputLabel, Select, MenuItem, Switch } from '@mui/material';
 import { FaUserShield, FaCog, FaBell, FaEdit, FaTrash, FaPlus } from 'react-icons/fa';
 import type { GridColDef } from '@mui/x-data-grid';
 import { PageHeader } from '../../../components/page-header';
@@ -56,13 +56,25 @@ export default function Settings() {
 
     // Sync settingsForm when data loads
     if (settingsResponse?.data && settingsForm === null) {
-        setSettingsForm(settingsResponse.data);
+        const data = settingsResponse.data;
+        setSettingsForm({
+            ...data,
+            // release_notes ni JSON array backend — kwenye form tunaweka kama text (mstari kwa mstari)
+            release_notes: Array.isArray(data.release_notes) ? data.release_notes.join('\n') : '',
+        });
     }
 
     const handleSaveSettings = async () => {
         if (!settingsForm) return;
         setIsSavingSettings(true);
-        await api.updateSettings(settingsForm).catch(() => {});
+        const payload = {
+            ...settingsForm,
+            release_notes: String(settingsForm.release_notes || '')
+                .split('\n')
+                .map((line: string) => line.trim())
+                .filter(Boolean),
+        };
+        await api.updateSettings(payload).catch(() => {});
         queryClient.invalidateQueries({ queryKey: ['settings'] });
         setIsSavingSettings(false);
     };
@@ -289,12 +301,47 @@ export default function Settings() {
                             onChange={(e) => setSettingsForm((p: any) => ({ ...p, language: e.target.value }))}
                         />
                         <TextField
-                            label="App Version"
+                            label="App Version (latest)"
                             size="small"
                             fullWidth
                             value={settingsForm?.app_version ?? ''}
                             onChange={(e) => setSettingsForm((p: any) => ({ ...p, app_version: e.target.value }))}
+                            helperText="Inatumiwa na in-app update card — weka version mpya zaidi kwenye Play Store"
                         />
+                        <TextField
+                            label="Minimum Version"
+                            size="small"
+                            fullWidth
+                            value={settingsForm?.minimum_version ?? ''}
+                            onChange={(e) => setSettingsForm((p: any) => ({ ...p, minimum_version: e.target.value }))}
+                        />
+                        <TextField
+                            label="Update URL"
+                            size="small"
+                            fullWidth
+                            value={settingsForm?.update_url ?? ''}
+                            onChange={(e) => setSettingsForm((p: any) => ({ ...p, update_url: e.target.value }))}
+                        />
+                        <TextField
+                            label="Release Notes (mstari kwa mstari)"
+                            size="small"
+                            fullWidth
+                            multiline
+                            minRows={3}
+                            value={settingsForm?.release_notes ?? ''}
+                            onChange={(e) => setSettingsForm((p: any) => ({ ...p, release_notes: e.target.value }))}
+                        />
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <Box>
+                                <Typography variant="body2" sx={{ fontWeight: 500, fontSize: '0.82rem' }}>Force Update</Typography>
+                                <Typography variant="caption" sx={{ color: 'var(--text-dimmer)' }}>Lazimisha mtumiaji asasishe kabla ya kutumia</Typography>
+                            </Box>
+                            <Switch
+                                size="small"
+                                checked={!!settingsForm?.is_force_update}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSettingsForm((p: any) => ({ ...p, is_force_update: e.target.checked }))}
+                            />
+                        </Box>
                         <Box>
                             <Typography variant="caption" sx={{ color: 'var(--text-dimmer)' }}>Authentication</Typography>
                             <Typography variant="body2" sx={{ fontWeight: 500, fontSize: '0.82rem', mt: 0.3 }}>JWT with httpOnly cookies</Typography>
