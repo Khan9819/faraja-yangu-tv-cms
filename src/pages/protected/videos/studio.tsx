@@ -103,6 +103,7 @@ export default function VideoStudio() {
 
     const [uploadProgress, setUploadProgress] = useState(0);
     const [isUploading, setIsUploading] = useState(false);
+    const [uploadStats, setUploadStats] = useState<{ speed: number; eta: number; completedChunks: number; totalChunks: number } | null>(null);
     const [videoPreview, setVideoPreview] = useState<string | null>(null);
     const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
     const [tvPosterPreview, setTvPosterPreview] = useState<string | null>(null);
@@ -527,10 +528,31 @@ export default function VideoStudio() {
         setIsUploading(true);
         setUploadError(null);
         setUploadFailed(false);
-        const chunkSize = 5 * 1024 * 1024; // 5MB chunks
+        const chunkSize = 10 * 1024 * 1024; // 10MB chunks (was 5MB — faster uploads)
         const totalChunks = Math.ceil(file.size / chunkSize);
         const fileName = file.name;
-        const maxRetries = 3;
+        const maxRetries = 5; // Was 3 — more resilient for slow networks
+
+        // Upload speed + time tracking
+        const uploadStartTime = Date.now();
+        let lastChunkTime = Date.now();
+        let lastBytesUploaded = 0;
+
+        const getUploadStats = (completedChunks: number, totalChunks: number) => {
+            const now = Date.now();
+            const elapsed = (now - uploadStartTime) / 1000; // seconds
+            const completedBytes = completedChunks * chunkSize;
+            const speed = elapsed > 0 ? completedBytes / elapsed : 0; // bytes/sec
+            const remainingChunks = totalChunks - completedChunks;
+            const remainingBytes = remainingChunks * chunkSize;
+            const eta = speed > 0 ? remainingBytes / speed : 0; // seconds
+            return {
+                speed: speed / 1024 / 1024, // MB/s
+                eta: Math.round(eta),
+                completedChunks,
+                totalChunks,
+            };
+        };
 
         // Helper function to upload a single chunk with retry logic
         const uploadChunkWithRetry = async (chunkIndex: number, retryCount = 0): Promise<void> => {
@@ -549,20 +571,18 @@ export default function VideoStudio() {
 
             try {
                 // Upload chunk directly to R2 using presigned URL (raw binary PUT)
-                // Only send required_headers — no Authorization or extra headers
                 await api.directUploadVideoChunk(chunkUploadUrl, chunk, requiredHeaders);
                 // Track successfully uploaded chunk locally for resume
                 uploadedChunksRef.current.add(chunkIndex);
+                lastChunkTime = Date.now();
+                lastBytesUploaded += chunk.size;
             } catch (error: any) {
                 const status = error?.response?.status;
-                // Retry on transient failures: 502/504 (proxy/gateway), 403
-                // (expired presigned URL), 408 (request timeout), 429 (rate
-                // limited), 500 (R2 server error) or network/timeout errors
-                // (no response -> !status, includes our new fetch timeout).
+                // Retry on transient failures
                 const retryable = [502, 504, 403, 408, 429, 500].includes(status) || !status;
                 if (retryable && retryCount < maxRetries) {
-                    console.log(`Chunk ${chunkIndex + 1}/${totalChunks} failed, retrying (${retryCount + 1}/${maxRetries})...`);
-                    // Exponential backoff: wait 1s, 2s, 4s
+                    console.log(`Chunk ${chunkIndex + 1}/${totalChunks} failed (HTTP ${status}), retrying (${retryCount + 1}/${maxRetries})...`);
+                    // Exponential backoff: 1s, 2s, 4s, 8s, 16s
                     await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, retryCount)));
                     return uploadChunkWithRetry(chunkIndex, retryCount + 1);
                 }
@@ -578,45 +598,43 @@ export default function VideoStudio() {
                 const uploadStatus = statusResponse.data;
 
                 if (uploadStatus?.is_complete) {
-                    // All chunks already uploaded, skip to assembly
                     setUploadProgress(90);
                     chunksToUpload = [];
                 } else if (uploadStatus?.missing_chunks?.length > 0) {
                     chunksToUpload = uploadStatus.missing_chunks;
-                    // Set initial progress based on already-uploaded chunks
                     const alreadyUploaded = uploadStatus.uploaded_count || 0;
                     const progress = Math.round((alreadyUploaded / totalChunks) * 90);
                     setUploadProgress(progress);
-                    // Sync local tracking with server state
                     for (let i = 0; i < totalChunks; i++) {
                         if (!chunksToUpload.includes(i)) {
                             uploadedChunksRef.current.add(i);
                         }
                     }
                 } else {
-                    // No status info available, use local tracking to determine what's left
                     chunksToUpload = Array.from({ length: totalChunks }, (_, i) => i)
                         .filter(i => !uploadedChunksRef.current.has(i));
                 }
             } catch {
-                // Status endpoint failed — use local tracking to skip already-uploaded chunks
                 chunksToUpload = Array.from({ length: totalChunks }, (_, i) => i)
                     .filter(i => !uploadedChunksRef.current.has(i));
             }
 
-            // Upload only missing chunks sequentially
-            // Use local ref for accurate completed count (not stale closure state)
             let completedCount = totalChunks - chunksToUpload.length;
             const initialProgress = Math.round((completedCount / totalChunks) * 90);
             setUploadProgress(initialProgress);
 
+            // Upload missing chunks with per-chunk progress
             for (const chunkIndex of chunksToUpload) {
                 await uploadChunkWithRetry(chunkIndex);
                 completedCount++;
 
-                // Update progress (reserve last 10% for assembly)
+                // Update progress with speed + ETA
                 const progress = Math.round((completedCount / totalChunks) * 90);
                 setUploadProgress(progress);
+
+                // Update upload stats for UI
+                const stats = getUploadStats(completedCount, totalChunks);
+                setUploadStats?.(stats);
             }
 
             // Assemble chunks on the server
@@ -625,7 +643,6 @@ export default function VideoStudio() {
             
             setUploadProgress(100);
             setIsUploading(false);
-            // Clear local tracking on success
             uploadedChunksRef.current.clear();
             return true;
         } catch (error: any) {
@@ -1248,6 +1265,15 @@ export default function VideoStudio() {
                                                 >
                                                     {uploadProgress < 100 ? 'Uploading video...' : 'Finalizing upload...'}
                                                 </Typography>
+                                                {uploadStats && uploadProgress < 100 && (
+                                                    <Box sx={{ mt: 1, textAlign: 'center' }}>
+                                                        <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)' }}>
+                                                            Chunk {uploadStats.completedChunks}/{uploadStats.totalChunks} | {' '}
+                                                            {uploadStats.speed > 0 ? `${uploadStats.speed.toFixed(1)} MB/s` : 'Calculating...'} | {' '}
+                                                            {uploadStats.eta > 0 ? `~${uploadStats.eta}s remaining` : ''}
+                                                        </Typography>
+                                                    </Box>
+                                                )}
                                             </>
                                         )}
                                     </Box>

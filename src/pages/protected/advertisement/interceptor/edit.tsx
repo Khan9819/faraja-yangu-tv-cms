@@ -212,10 +212,10 @@ export default function InterceptorEdit() {
 
     const uploadVideoChunked = async (file: File, videoId: number) => {
         setIsUploading(true);
-        const chunkSize = 5 * 1024 * 1024; // 5MB chunks
+        const chunkSize = 10 * 1024 * 1024; // 10MB chunks (was 5MB — faster uploads)
         const totalChunks = Math.ceil(file.size / chunkSize);
         const fileName = file.name;
-        const maxRetries = 3;
+        const maxRetries = 5; // Was 3 — more resilient for slow networks
 
         const uploadChunkWithRetry = async (chunkIndex: number, retryCount = 0): Promise<void> => {
             const start = chunkIndex * chunkSize;
@@ -235,7 +235,7 @@ export default function InterceptorEdit() {
                 uploadedChunksRef.current.add(chunkIndex);
             } catch (error: any) {
                 const status = error?.response?.status;
-                if ((status === 504 || status === 502 || status === 403 || !status) && retryCount < maxRetries) {
+                if ((status === 504 || status === 502 || status === 403 || status === 408 || status === 429 || status === 500 || !status) && retryCount < maxRetries) {
                     await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, retryCount)));
                     return uploadChunkWithRetry(chunkIndex, retryCount + 1);
                 }
