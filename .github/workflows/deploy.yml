@@ -24,10 +24,7 @@ jobs:
         run: npm run build
 
       - name: Create deploy tarball
-        run: |
-          cd dist
-          tar -czf ../captain-definition.tar.gz .
-          cd ..
+        run: cd dist && tar -czf ../captain-definition.tar.gz . && cd ..
 
       - name: Deploy to CapRover
         env:
@@ -36,14 +33,11 @@ jobs:
           CAPROVER_PASSWORD: ${{ secrets.CAPROVER_PASSWORD }}
         run: |
           echo "=== Deploying CMS to CapRover ==="
-          echo "Server: $CAPROVER_URL"
-          echo "App: $CAPROVER_APP_NAME"
 
-          # Get auth token
           TOKEN=$(curl -sS -X POST "$CAPROVER_URL/api/v2/login" \
             -H "Content-Type: application/json" \
             -d "{\"password\": \"$CAPROVER_PASSWORD\"}" \
-            | grep -o '"token":"[^"]*"' | cut -d'"' -f4)
+            | python -c "import json,sys; print(json.load(sys.stdin)['data']['token'])")
 
           if [ -z "$TOKEN" ]; then
             echo "ERROR: Failed to get auth token"
@@ -52,7 +46,6 @@ jobs:
 
           echo "Auth token obtained"
 
-          # Deploy tarball
           RESPONSE=$(curl -sS -X POST "$CAPROVER_URL/api/v2/apps/deploy" \
             -H "Authorization: Bearer $TOKEN" \
             -F "appName=$CAPROVER_APP_NAME" \
