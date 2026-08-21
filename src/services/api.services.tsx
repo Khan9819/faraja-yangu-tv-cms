@@ -711,4 +711,25 @@ export default class API extends BaseService {
 
         return response.data;
     }
+
+    // ==================== Scheduled Publishing endpoints ==================== //
+
+    async getScheduledVideos() {
+        let response = await this.axiosInstance.get(`/streaming/scheduled-videos/`,
+            {
+                headers: this.headers,
+            })
+
+        return response.data;
+    }
+
+    async publishNow(videoId: number) {
+        let response = await this.axiosInstance.post(`/streaming/publish-now/${videoId}/`,
+            {},
+            {
+                headers: this.headers,
+            })
+
+        return response.data;
+    }
 }
