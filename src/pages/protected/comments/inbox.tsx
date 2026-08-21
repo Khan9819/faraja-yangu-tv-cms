@@ -371,7 +371,7 @@ export default function CommentsInbox() {
                                                         {new Date(msg.created_at).toLocaleTimeString("en-US", {
                                                             hour: "2-digit",
                                                             minute: "2-digit",
-                                                            hour12: true,
+                                                            hour12: false,
                                                         })}
                                                     </Typography>
                                                 </Box>

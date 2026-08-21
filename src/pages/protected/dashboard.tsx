@@ -569,7 +569,7 @@ function ScheduledQueue({ api, navigate }: { api: any; navigate: any }) {
                         <Box sx={{ flex: 1, minWidth: 0 }}>
                             <Typography variant="body2" sx={{ fontWeight: 600, fontSize: '0.85rem' }}>{video.title}</Typography>
                             <Typography variant="caption" sx={{ color: 'var(--text-dimmer)' }}>
-                                Publishes: {new Date(video.scheduled_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                Publishes: {new Date(video.scheduled_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })}
                             </Typography>
                         </Box>
                         <Box sx={{ display: 'flex', gap: 1 }}>

@@ -190,7 +190,7 @@ export const AppBar: FC = () => {
                                         {notification.message}
                                     </Typography>
                                     <Typography variant="caption" display="block" color="text.secondary" sx={{ mt: 0.25, fontSize: "0.65rem" }}>
-                                        {notification.created_at ? new Date(notification.created_at).toLocaleString() : notification.time ?? ''}
+                                        {notification.created_at ? new Date(notification.created_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }) : notification.time ?? ''}
                                     </Typography>
                                 </Box>
                             </MenuItem>
