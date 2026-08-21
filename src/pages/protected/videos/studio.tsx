@@ -78,7 +78,7 @@ interface VideoFormData {
     videoFile: File | null;
     duration: string;
     status: string;
-    publishMode: 'now' | 'scheduled';
+    publishMode: 'now' | 'scheduled' | 'draft';
     scheduledAt: string;  // ISO datetime string
 }
 
@@ -402,7 +402,7 @@ export default function VideoStudio() {
             submitData.append('description', formData.description);
             submitData.append('category', formData.category.toString());
             submitData.append('duration', formData.duration);
-            submitData.append('status', formData.publishMode === 'scheduled' ? 'draft' : formData.status);
+            submitData.append('status', formData.publishMode === 'draft' ? 'draft' : formData.publishMode === 'scheduled' ? 'draft' : formData.status);
             if (formData.publishMode === 'scheduled' && formData.scheduledAt) {
                 submitData.append('scheduled_at', formData.scheduledAt);
             }
@@ -695,7 +695,7 @@ export default function VideoStudio() {
             submitData.append('description', formData.description);
             submitData.append('category', formData.category.toString());
             submitData.append('duration', formData.duration);
-            submitData.append('status', formData.publishMode === 'scheduled' ? 'draft' : formData.status);
+            submitData.append('status', formData.publishMode === 'draft' ? 'draft' : formData.publishMode === 'scheduled' ? 'draft' : formData.status);
             if (formData.publishMode === 'scheduled' && formData.scheduledAt) {
                 submitData.append('scheduled_at', formData.scheduledAt);
             }
@@ -1671,9 +1671,10 @@ export default function VideoStudio() {
                                 <Select
                                     value={formData.publishMode}
                                     label="Publish"
-                                    onChange={(e) => setFormData({ ...formData, publishMode: e.target.value as 'now' | 'scheduled' })}
+                                    onChange={(e) => setFormData({ ...formData, publishMode: e.target.value as 'now' | 'scheduled' | 'draft' })}
                                 >
                                     <MenuItem value="now">Publish Now</MenuItem>
+                                    <MenuItem value="draft">Save as Draft</MenuItem>
                                     <MenuItem value="scheduled">Schedule for Later</MenuItem>
                                 </Select>
                             </FormControl>
