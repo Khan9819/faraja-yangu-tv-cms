@@ -6,7 +6,22 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Trigger CapRover Build
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install & Build
         run: |
-          curl -sS -X POST "${{ secrets.CAPROVER_WEBHOOK_URL }}" --max-time 30
-          echo "✅ CapRover build triggered for CMS"
+          npm ci
+          npm run build
+
+      - name: Deploy to CapRover
+        uses: caprover/deploy-from-github@v1.2.0
+        with:
+          server: ${{ secrets.CAPROVER_URL }}
+          app: ${{ secrets.CAPROVER_APP_NAME }}
+          password: ${{ secrets.CAPROVER_PASSWORD }}
