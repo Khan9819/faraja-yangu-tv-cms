@@ -295,17 +295,30 @@ export default function VideosList() {
         },
         {
             field: 'is_published',
-            headerName: 'Published',
+            headerName: 'Status',
             flex: 0.8,
             minWidth: 110,
             filterable: true,
-            renderCell: (params) => (
-                <Chip
-                    label={params.value ? 'Published' : 'Draft'}
-                    color={params.value ? 'success' : 'default'}
-                    size="small"
-                />
-            ),
+            renderCell: (params) => {
+                const row = params.row;
+                if (row.scheduled_at && !row.is_published) {
+                    const schedDate = new Date(row.scheduled_at);
+                    return (
+                        <Chip
+                            label={`Scheduled: ${schedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`}
+                            color="warning"
+                            size="small"
+                        />
+                    );
+                }
+                return (
+                    <Chip
+                        label={params.value ? 'Published' : 'Draft'}
+                        color={params.value ? 'success' : 'default'}
+                        size="small"
+                    />
+                );
+            },
         },
         {
             field: 'created_at',

@@ -78,6 +78,8 @@ interface VideoFormData {
     videoFile: File | null;
     duration: string;
     status: string;
+    publishMode: 'now' | 'scheduled';
+    scheduledAt: string;  // ISO datetime string
 }
 
 export default function VideoStudio() {
@@ -99,6 +101,8 @@ export default function VideoStudio() {
         videoFile: null,
         duration: '',
         status: 'published',
+        publishMode: 'now',
+        scheduledAt: '',
     });
 
     const [uploadProgress, setUploadProgress] = useState(0);
@@ -169,7 +173,9 @@ export default function VideoStudio() {
                 portrait_cover: null,
                 videoFile: null,
                 duration: video.duration || '',
-                status: video.status || 'published',
+                status: video.is_published ? 'published' : 'draft',
+                publishMode: video.scheduled_at ? 'scheduled' : 'now',
+                scheduledAt: video.scheduled_at ? video.scheduled_at.substring(0, 16) : '',
             });
             if (video.thumbnail) {
                 setThumbnailPreview(video.thumbnail);
@@ -396,7 +402,10 @@ export default function VideoStudio() {
             submitData.append('description', formData.description);
             submitData.append('category', formData.category.toString());
             submitData.append('duration', formData.duration);
-            submitData.append('status', formData.status);
+            submitData.append('status', formData.publishMode === 'scheduled' ? 'draft' : formData.status);
+            if (formData.publishMode === 'scheduled' && formData.scheduledAt) {
+                submitData.append('scheduled_at', formData.scheduledAt);
+            }
 
             if (formData.thumbnail) {
                 submitData.append('thumbnail', renameFileWithUUID(formData.thumbnail));
@@ -688,7 +697,10 @@ export default function VideoStudio() {
             submitData.append('description', formData.description);
             submitData.append('category', formData.category.toString());
             submitData.append('duration', formData.duration);
-            submitData.append('status', formData.status);
+            submitData.append('status', formData.publishMode === 'scheduled' ? 'draft' : formData.status);
+            if (formData.publishMode === 'scheduled' && formData.scheduledAt) {
+                submitData.append('scheduled_at', formData.scheduledAt);
+            }
 
             if (formData.thumbnail) {
                 submitData.append('thumbnail', renameFileWithUUID(formData.thumbnail));
@@ -1655,18 +1667,31 @@ export default function VideoStudio() {
                                 helperText="Auto-detected from video"
                             />
 
-                            {/* Status */}
+                            {/* Publish Mode */}
                             <FormControl fullWidth>
-                                <InputLabel>Status</InputLabel>
+                                <InputLabel>Publish</InputLabel>
                                 <Select
-                                    value={formData.status}
-                                    label="Status"
-                                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                                    value={formData.publishMode}
+                                    label="Publish"
+                                    onChange={(e) => setFormData({ ...formData, publishMode: e.target.value as 'now' | 'scheduled' })}
                                 >
-                                    <MenuItem value="draft">Draft</MenuItem>
-                                    <MenuItem value="published">Published</MenuItem>
+                                    <MenuItem value="now">Publish Now</MenuItem>
+                                    <MenuItem value="scheduled">Schedule for Later</MenuItem>
                                 </Select>
                             </FormControl>
+
+                            {formData.publishMode === 'scheduled' && (
+                                <TextField
+                                    label="Publish Date & Time"
+                                    type="datetime-local"
+                                    fullWidth
+                                    required
+                                    value={formData.scheduledAt}
+                                    onChange={(e) => setFormData({ ...formData, scheduledAt: e.target.value })}
+                                    InputLabelProps={{ shrink: true }}
+                                    helperText="Video will be published automatically at this time"
+                                />
+                            )}
                         </Stack>
                     </Box>
                 </Paper>
