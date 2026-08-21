@@ -544,7 +544,6 @@ export default function VideoStudio() {
 
         // Upload speed + time tracking
         const uploadStartTime = Date.now();
-        let lastChunkTime = Date.now();
         let lastBytesUploaded = 0;
 
         const getUploadStats = (completedChunks: number, totalChunks: number) => {
@@ -583,7 +582,6 @@ export default function VideoStudio() {
                 await api.directUploadVideoChunk(chunkUploadUrl, chunk, requiredHeaders);
                 // Track successfully uploaded chunk locally for resume
                 uploadedChunksRef.current.add(chunkIndex);
-                lastChunkTime = Date.now();
                 lastBytesUploaded += chunk.size;
             } catch (error: any) {
                 const status = error?.response?.status;
