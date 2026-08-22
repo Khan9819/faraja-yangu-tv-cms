@@ -1680,16 +1680,62 @@ export default function VideoStudio() {
                             </FormControl>
 
                             {formData.publishMode === 'scheduled' && (
-                                <TextField
-                                    label="Publish Date & Time (EAT)"
-                                    type="datetime-local"
-                                    fullWidth
-                                    required
-                                    value={formData.scheduledAt}
-                                    onChange={(e) => setFormData({ ...formData, scheduledAt: e.target.value })}
-                                    InputLabelProps={{ shrink: true }}
-                                    helperText="Video will be published automatically at this EAT time (UTC+3)"
-                                />
+                                <Box>
+                                    <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', rowGap: 1 }}>
+                                        <TextField
+                                            label="Publish Date (EAT)"
+                                            type="date"
+                                            fullWidth
+                                            required
+                                            value={formData.scheduledAt ? formData.scheduledAt.substring(0, 10) : ''}
+                                            onChange={(e) => {
+                                                const timePart = formData.scheduledAt && formData.scheduledAt.length >= 16
+                                                    ? formData.scheduledAt.substring(11, 16)
+                                                    : '09:00';
+                                                setFormData({ ...formData, scheduledAt: e.target.value ? `${e.target.value}T${timePart}` : '' });
+                                            }}
+                                            InputLabelProps={{ shrink: true }}
+                                            sx={{ flex: 2, minWidth: 160 }}
+                                        />
+                                        <FormControl fullWidth required sx={{ flex: 1, minWidth: 110 }}>
+                                            <InputLabel id="sched-hour-label">Hour (24h)</InputLabel>
+                                            <Select
+                                                labelId="sched-hour-label"
+                                                label="Hour (24h)"
+                                                value={formData.scheduledAt && formData.scheduledAt.length >= 16 ? formData.scheduledAt.substring(11, 13) : ''}
+                                                onChange={(e) => {
+                                                    const datePart = formData.scheduledAt ? formData.scheduledAt.substring(0, 10) : new Date().toISOString().substring(0, 10);
+                                                    const minutePart = formData.scheduledAt && formData.scheduledAt.length >= 16 ? formData.scheduledAt.substring(14, 16) : '00';
+                                                    setFormData({ ...formData, scheduledAt: `${datePart}T${e.target.value}:${minutePart}` });
+                                                }}
+                                            >
+                                                {Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0')).map((h) => (
+                                                    <MenuItem key={h} value={h}>{h}:00</MenuItem>
+                                                ))}
+                                            </Select>
+                                        </FormControl>
+                                        <FormControl fullWidth required sx={{ flex: 1, minWidth: 100 }}>
+                                            <InputLabel id="sched-minute-label">Minute</InputLabel>
+                                            <Select
+                                                labelId="sched-minute-label"
+                                                label="Minute"
+                                                value={formData.scheduledAt && formData.scheduledAt.length >= 16 ? formData.scheduledAt.substring(14, 16) : ''}
+                                                onChange={(e) => {
+                                                    const datePart = formData.scheduledAt ? formData.scheduledAt.substring(0, 10) : new Date().toISOString().substring(0, 10);
+                                                    const hourPart = formData.scheduledAt && formData.scheduledAt.length >= 16 ? formData.scheduledAt.substring(11, 13) : '09';
+                                                    setFormData({ ...formData, scheduledAt: `${datePart}T${hourPart}:${e.target.value}` });
+                                                }}
+                                            >
+                                                {Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0')).map((m) => (
+                                                    <MenuItem key={m} value={m}>{m}</MenuItem>
+                                                ))}
+                                            </Select>
+                                        </FormControl>
+                                    </Stack>
+                                    <Typography variant="caption" sx={{ color: 'var(--text-dimmer)', display: 'block', mt: 0.5 }}>
+                                        Video will be published automatically at this EAT time (UTC+3, 24-hour format)
+                                    </Typography>
+                                </Box>
                             )}
                         </Stack>
                     </Box>
