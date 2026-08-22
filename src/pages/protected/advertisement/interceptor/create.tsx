@@ -552,9 +552,17 @@ export default function InterceptorCreate() {
                                 />
                             )}
 
-                            <Box sx={{ display: "flex", gap: 2 }}>
-                                <TextField label="Start Time" fullWidth required value={formData.start_time} onChange={(e) => setFormData({ ...formData, start_time: e.target.value })} placeholder="HH:MM:SS" helperText="When ad starts" size="small" />
-                                <TextField label="End Time" fullWidth required value={formData.end_time} onChange={(e) => setFormData({ ...formData, end_time: e.target.value })} placeholder="HH:MM:SS" helperText="When ad ends" size="small" />
+                            <Box sx={{ p: 2, backgroundColor: "rgba(76, 175, 80, 0.06)", borderRadius: 2, border: "1px solid rgba(76, 175, 80, 0.25)" }}>
+                                <Typography variant="body2" fontWeight={600} sx={{ color: "#4CAF50" }}>
+                                    Placement: Pre-roll (plays at the very start)
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.5 }}>
+                                    This ad will play automatically at the beginning of every targeted video — users watch it like a trailer before the main content.
+                                </Typography>
+                                <Box sx={{ display: "flex", gap: 2, mt: 1.5 }}>
+                                    <TextField label="Start Time" fullWidth value={formData.start_time} InputProps={{ readOnly: true }} helperText="Fixed at 00:00:00 (video start)" size="small" />
+                                    <TextField label="End Time" fullWidth value={formData.end_time} InputProps={{ readOnly: true }} helperText="Matches ad length" size="small" />
+                                </Box>
                             </Box>
 
                             <Box sx={{ p: 2, backgroundColor: "rgba(255, 122, 0, 0.05)", borderRadius: 2, border: "1px solid rgba(255, 122, 0, 0.2)" }}>
