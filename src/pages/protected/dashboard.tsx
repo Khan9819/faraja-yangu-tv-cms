@@ -534,6 +534,9 @@ export default function Dashboard() {
 
             {/* Scheduled Videos Queue */}
             <ScheduledQueue api={api} navigate={navigate} />
+
+            {/* Draft Videos Queue */}
+            <DraftQueue api={api} navigate={navigate} />
         </div>
     );
 }
@@ -570,6 +573,60 @@ function ScheduledQueue({ api, navigate }: { api: any; navigate: any }) {
                             <Typography variant="body2" sx={{ fontWeight: 600, fontSize: '0.85rem' }}>{video.title}</Typography>
                             <Typography variant="caption" sx={{ color: 'var(--text-dimmer)' }}>
                                 Publishes: {new Date(video.scheduled_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })}
+                            </Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', gap: 1 }}>
+                            <Tooltip title="Publish now">
+                                <IconButton size="small" onClick={() => publishNowMutation.mutate(video.id)} disabled={publishNowMutation.isPending}>
+                                    <FaPlay size={12} color="#10b981" />
+                                </IconButton>
+                            </Tooltip>
+                            <Tooltip title="View video">
+                                <IconButton size="small" onClick={() => navigate(`/content/videos/${video.id}/view`)}>
+                                    <FaEye size={12} />
+                                </IconButton>
+                            </Tooltip>
+                        </Box>
+                    </Box>
+                ))}
+            </WorkspaceContainer>
+        </Box>
+    );
+}
+
+function DraftQueue({ api, navigate }: { api: any; navigate: any }) {
+    const { data: videosResponse, isLoading } = useQuery({
+        queryKey: ['videos'],
+        queryFn: () => api.getVideos(),
+        refetchInterval: 30_000,
+    });
+    const queryClient = useQueryClient();
+    const publishNowMutation = useMutation({
+        mutationFn: (videoId: number) => api.publishNow(videoId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['videos'] });
+            queryClient.invalidateQueries({ queryKey: ['scheduled-videos'] });
+        },
+    });
+
+    const allVideos: any[] = videosResponse?.data ?? [];
+    const draftVideos = allVideos.filter((v: any) => !v.is_published && !v.scheduled_at && v.processing_status === 'completed');
+    if (isLoading || draftVideos.length === 0) return null;
+
+    return (
+        <Box sx={{ mt: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                <FaFilm size={13} style={{ color: '#94a3b8' }} />
+                <Typography variant="body2" sx={{ fontWeight: 600 }}>Draft Videos ({draftVideos.length})</Typography>
+            </Box>
+            <WorkspaceContainer>
+                {draftVideos.slice(0, 5).map((video: any) => (
+                    <Box key={video.id} sx={{ display: 'flex', alignItems: 'center', gap: 2, py: 1.5, borderBottom: '1px solid var(--border-color)', '&:last-child': { borderBottom: 'none' } }}>
+                        <Avatar src={video.thumbnail} sx={{ width: 48, height: 48, borderRadius: 1 }} variant="rounded" />
+                        <Box sx={{ flex: 1, minWidth: 0 }}>
+                            <Typography variant="body2" sx={{ fontWeight: 600, fontSize: '0.85rem' }}>{video.title}</Typography>
+                            <Typography variant="caption" sx={{ color: 'var(--text-dimmer)' }}>
+                                Draft — not yet published
                             </Typography>
                         </Box>
                         <Box sx={{ display: 'flex', gap: 1 }}>

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import DataGridWrapper from '../../../components/DataTable/DataGridWrapper';
 import type { GridColDef, GridRowSelectionModel } from '@mui/x-data-grid';
 import { Box, Button, Chip, Avatar, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, Typography, CircularProgress, Toolbar, InputBase } from '@mui/material';
-import { FaPlus, FaEdit, FaTrash, FaEye, FaSearch } from 'react-icons/fa';
+import { FaPlus, FaEdit, FaTrash, FaEye, FaSearch, FaPlay } from 'react-icons/fa';
 import { WorkspaceContainer } from '../../../components/workspace-container';
 import { PageHeader } from '../../../components/page-header';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -85,6 +85,14 @@ export default function VideosList() {
             queryClient.invalidateQueries({ queryKey: ['videos'] });
             setRowSelectionModel([]);
             setBulkDeleteDialogOpen(false);
+        },
+    });
+
+    // Publish now mutation (for draft/scheduled videos)
+    const publishNowMutation = useMutation({
+        mutationFn: (videoId: number) => api.publishNow(videoId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['videos'] });
         },
     });
 
@@ -348,6 +356,22 @@ export default function VideosList() {
             headerAlign: 'right',
             renderCell: (params) => (
                 <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end', alignItems: 'center' }}>
+                    {!params.row.is_published && (
+                        <IconButton
+                            size="small"
+                            onClick={() => publishNowMutation.mutate(params.row.id)}
+                            title="Publish Now"
+                            disabled={publishNowMutation.isPending}
+                            sx={{
+                                color: '#10b981',
+                                '&:hover': {
+                                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                                },
+                            }}
+                        >
+                            <FaPlay size={12} />
+                        </IconButton>
+                    )}
                     <IconButton
                         size="small"
                         onClick={() => navigate(`/content/videos/${params.row.id}/view`)}
