@@ -1,9 +1,12 @@
 # Multi-stage build: build app first, then serve with nginx
+ARG BUILD_DATE=unknown
 FROM node:20-alpine AS builder
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 COPY . .
+# BUILD_DATE forces Docker to invalidate cache and rebuild
+ENV BUILD_DATE=${BUILD_DATE}
 RUN npm run build
 
 FROM nginx:alpine
