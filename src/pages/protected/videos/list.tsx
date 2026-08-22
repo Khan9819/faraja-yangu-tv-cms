@@ -303,9 +303,11 @@ export default function VideosList() {
                 const row = params.row;
                 if (row.scheduled_at && !row.is_published) {
                     const schedDate = new Date(row.scheduled_at);
+                    const dateStr = schedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                    const timeStr = schedDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
                     return (
                         <Chip
-                            label={`Scheduled: ${schedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`}
+                            label={`Scheduled: ${dateStr} ${timeStr}`}
                             color="warning"
                             size="small"
                         />

@@ -1681,14 +1681,14 @@ export default function VideoStudio() {
 
                             {formData.publishMode === 'scheduled' && (
                                 <TextField
-                                    label="Publish Date & Time"
+                                    label="Publish Date & Time (EAT)"
                                     type="datetime-local"
                                     fullWidth
                                     required
                                     value={formData.scheduledAt}
                                     onChange={(e) => setFormData({ ...formData, scheduledAt: e.target.value })}
                                     InputLabelProps={{ shrink: true }}
-                                    helperText="Video will be published automatically at this time"
+                                    helperText="Video will be published automatically at this EAT time (UTC+3)"
                                 />
                             )}
                         </Stack>
